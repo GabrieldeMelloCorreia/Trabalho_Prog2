@@ -57,10 +57,10 @@ int adicionarProduto(Produto *produto, int numProdutos, int numProdutosExistente
     }
 
     for(i = 0; i < numProdutos; i++){
-        printf("====Produto %d====\n", numProdutosExistentes+i + 1);
+        printf("\n====Produto %d====\n", numProdutosExistentes+i + 1);
         printf("Nome do produto: ");
-        getchar();
         fgets(produto[i].nome, 200, stdin);
+        produto[i].nome[strcspn(produto[i].nome, "\n")] = '\0'; // Remove '\n'
 
         printf("Qual eh seu valor: ");
         scanf("%f", &produto[i].preco);
@@ -124,7 +124,59 @@ int removerCliente(Pessoa **cliente, int *numClientes){
     return 0;
 }
 
+//-------------------------------------- 4 --------------------------------------
+int removerProduto(Produto **produto, int *numProduto){
+    int i,j;
+    int removidos = 0;
+    char produtoBuscar[200];
 
+    if(*numProduto == 0){
+        printf("Nenhum produto cadastrado. \n");
+        return 0;
+    }
+
+    printf("Qual o nome do produto para remocao: ");
+    fgets(produtoBuscar, 200, stdin);
+
+    // Remover o '\n' que pode ser capturado pelo fgets()
+    produtoBuscar[strcspn(produtoBuscar, "\n")] = 0;
+
+    /*"strcmp " compara duas strings, caso sejam iguais retorna 0, 
+    caso a primeira seja menor que a segundo retorna um numero negativo, e caso a primeira for maior que a segundo 
+    retorna um numero positivo*/
+    for(i = 0; i < *numProduto; i++){
+        if(strcmp((*produto)[i].nome, produtoBuscar) == 0){
+            //"Removerá o produto encontrado, substituindo os dados da posição a frente nele"
+            for(j = i; j < *numProduto -1; j++){
+                (*produto)[j] = (*produto)[j + 1];
+            }
+
+            (*numProduto)--;//atualiza o n° de clientes
+            i--;// para verificar a mesma posição, ja que os dados foram substituídos pelo da frente
+            removidos++;//contador de remoção
+        }
+    }
+
+    if(removidos > 0){//caso há remocao realocamos o vetor de struct
+            
+        if(*numProduto > 0){//E também caso o numero de clientes for maior que 0, se não o vetor de struct poderá estar vazio e com vazamento de memória
+        *produto = realloc(*produto, (*numProduto) * sizeof(Produto));
+        }else{
+            free(*produto);
+            *produto = NULL;
+        }
+        printf("\n%d Produtos removidos! \n", removidos);
+
+    }else{
+        printf("\n============================================ \n");
+        printf("Nenhum produto com esse nome foi encontrado! \n");
+        printf("============================================ \n");
+        return 1;
+    }
+    return 0;
+}
+
+//-------------------------------------- 5 --------------------------------------
 void listarClientes(Pessoa *cliente, int numClientes) {
     if (numClientes == 0) {
         printf("\nNenhum cliente cadastrado.\n");
@@ -140,6 +192,21 @@ void listarClientes(Pessoa *cliente, int numClientes) {
     }
 }
 
+//-------------------------------------- 6 --------------------------------------
+void listarProdutos(Produto *produto, int numProdutos){
+    if (numProdutos == 0) {
+        printf("\nNenhum produto cadastrado.\n");
+        return;
+    }
+    printf("\n----- Lista de Produtos -----\n");
+    for (int i = 0; i < numProdutos; i++) {
+        printf("Produto %d:\n", i + 1);
+        printf("Nome: %s\n", produto[i].nome);
+        printf("Preco: %.2f\n", produto[i].preco);
+        printf("ID: %d\n", produto[i].id);
+        printf("-----------------------------\n");
+    }
+}
 
 int menu(){
     int opcao;
@@ -172,7 +239,7 @@ int main(){
     int numProdutos = 0;
     int opcao, novosClientes, novosProdutos;
 
-    printf("=====Bem Vindo=====");
+    printf("\n========Bem Vindo========");
 
     do{
         opcao = menu();
@@ -214,10 +281,15 @@ int main(){
         break;
 
         case 4:
+            removerProduto(&produto, &numProdutos);
         break;
 
         case 5:
             listarClientes(cliente, numClientes); 
+        break;
+        
+        case 6:
+            listarProdutos(produto, numProdutos);
         break;
 
         default:
