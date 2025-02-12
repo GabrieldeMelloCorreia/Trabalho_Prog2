@@ -24,7 +24,7 @@ typedef struct Compra{
 }Compra;
 
 //-------------------------------------- 1 --------------------------------------
-int adicionarCliente(Pessoa *pessoa, int numClientes, int numClientesExistentes){
+int adicionarCliente(Pessoa *pessoa, int numClientes, int numClientesExistentes, FILE *arquivo){
     int i;
     if(pessoa == NULL){//Verificando se a alocação realmente deu certo
         return 1;
@@ -45,7 +45,10 @@ int adicionarCliente(Pessoa *pessoa, int numClientes, int numClientesExistentes)
         printf("ID do cliente[%d] eh: %d\n", i+ 1, pessoa[i].id);//Por ser como chave primária para buscas não pode haver risco de duplicação.
         printf("------------------\n");
     }
-    
+    fseek(arquivo, 0, SEEK_END);
+    fwrite(pessoa, sizeof(Pessoa), numClientes, arquivo);
+    fclose(arquivo);
+
     return 0;
 }
 
@@ -177,19 +180,28 @@ int removerProduto(Produto **produto, int *numProduto){
 }
 
 //-------------------------------------- 5 --------------------------------------
-void listarClientes(Pessoa *cliente, int numClientes) {
-    if (numClientes == 0) {
-        printf("\nNenhum cliente cadastrado.\n");
-        return;
-    }
-    printf("\n----- Lista de Clientes -----\n");
-    for (int i = 0; i < numClientes; i++) {
-        printf("Cliente %d:\n", i + 1);
-        printf("Nome: %s\n", cliente[i].nome);
-        printf("Idade: %d\n", cliente[i].idade);
-        printf("ID: %d\n", cliente[i].id);
-        printf("-----------------------------\n");
-    }
+void listarClientes(FILE *arquivo) {
+    Pessoa cliente;
+    fseek(arquivo, 0, SEEK_SET);
+    printf("======Pessoas Cadastradas======");
+        while (fread(&cliente, sizeof(Pessoa), 1, arquivo) == 1)
+        {
+            printf("Nome: %s\n", &cliente.nome);
+            printf("Idade: %d\n", &cliente.idade);
+            printf("ID: %d\n", &cliente.id);
+        }
+    // if (numClientes == 0) {
+    //     printf("\nNenhum cliente cadastrado.\n");
+    //     return;
+    // }
+    // printf("\n----- Lista de Clientes -----\n");
+    // for (int i = 0; i < numClientes; i++) {
+    //     printf("Cliente %d:\n", i + 1);
+    //     printf("Nome: %s\n", cliente[i].nome);
+    //     printf("Idade: %d\n", cliente[i].idade);
+    //     printf("ID: %d\n", cliente[i].id);
+    //     printf("-----------------------------\n");
+    // }
 }
 
 //-------------------------------------- 6 --------------------------------------
@@ -233,11 +245,23 @@ int menu(){
 int main(){
     srand(time(NULL)); // Inicializa a seed do rand() com o tempo atual, para nunca haver repetições.
 
+    FILE *f;
+
     Pessoa *cliente = NULL;
     Produto *produto = NULL;
     int numClientes = 0;
     int numProdutos = 0;
     int opcao, novosClientes, novosProdutos;
+
+    f = fopen("Data.dat","rb+");//Criação do arquivo em Binário
+    if(f == NULL){
+        f = fopen("Data.dat", "wb+");
+        if (f == NULL){//Aqui podemos continuar tendo falha na criação por causa de PERMISSÃO, ou falta de espaço no disco Local.
+            exit(0);
+        }
+        //ALT + Z = ele faz o ajuste do conteúdo ao tamanho da tela.
+        //CTRL + ; = Deixa a linha inteira como comentário, e também o comentário
+    }
 
     printf("\n========Bem Vindo========");
 
@@ -256,7 +280,7 @@ int main(){
                 return 1;
             }
 
-            adicionarCliente(&cliente[numClientes], novosClientes, numClientes);
+            adicionarCliente(&cliente[numClientes], novosClientes, numClientes, f);
             numClientes += novosClientes;//Mesma coisa que: numClientes = novosClientes + numClientes;
             //Feito para atualizar o numero max de clientes depois de add.
         break;
@@ -285,7 +309,7 @@ int main(){
         break;
 
         case 5:
-            listarClientes(cliente, numClientes); 
+            listarClientes(f); 
         break;
         
         case 6:
