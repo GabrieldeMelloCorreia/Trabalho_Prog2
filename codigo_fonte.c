@@ -180,28 +180,24 @@ int removerProduto(Produto **produto, int *numProduto){
 }
 
 //-------------------------------------- 5 --------------------------------------
+//   ===   || //
+//  || ||  ||//
+//  || ||  ||\\
+//   ===   || \\
+//funcionando
 void listarClientes(FILE *arquivo) {
     Pessoa cliente;
     fseek(arquivo, 0, SEEK_SET);
-    printf("======Pessoas Cadastradas======");
+    printf("======Pessoas Cadastradas======\n");
         while (fread(&cliente, sizeof(Pessoa), 1, arquivo) == 1)
         {
-            printf("Nome: %s\n", &cliente.nome);
-            printf("Idade: %d\n", &cliente.idade);
-            printf("ID: %d\n", &cliente.id);
+            printf("Nome: %s\n", cliente.nome);
+            printf("Idade: %d\n", cliente.idade);
+            printf("ID: %d\n", cliente.id);
         }
-    // if (numClientes == 0) {
-    //     printf("\nNenhum cliente cadastrado.\n");
-    //     return;
-    // }
-    // printf("\n----- Lista de Clientes -----\n");
-    // for (int i = 0; i < numClientes; i++) {
-    //     printf("Cliente %d:\n", i + 1);
-    //     printf("Nome: %s\n", cliente[i].nome);
-    //     printf("Idade: %d\n", cliente[i].idade);
-    //     printf("ID: %d\n", cliente[i].id);
-    //     printf("-----------------------------\n");
-    // }
+        if (ftell(arquivo) == 0) {
+            printf("\nNenhum cliente cadastrado.\n");
+        }
 }
 
 //-------------------------------------- 6 --------------------------------------
