@@ -250,7 +250,7 @@ int removerProduto(Produto **produto, int *numProduto, FILE *arquivo)
 //-------------------------------------- 5 --------------------------------------
 //   ===   || //
 //  || ||  ||//
-//          || ||  ||\\
+//           || ||  ||\\
 //   ===   || \\
 //funcionando
 void listarClientes(FILE *arquivo)
@@ -294,15 +294,20 @@ int menu()
     int opcao;
 
     printf("\n 1)Adicionar Cliente"); // funcionando
-    printf("\n 2)Adicionar Produto"); // funcionando
-    printf("\n 3)Remover Cliente");   // funcionando
-    printf("\n 4)Remover Produto");
-    printf("\n 5)Listar todos os Clientes"); // funcionando
-    printf("\n 6)Listar todos os Produtos"); // funcionando
-    printf("\n 7)Buscar Cliente");
-    printf("\n 8)Buscar Produto");
-    printf("\n 9)Buscar Compra");
-    printf("\n 10)Atualizar todos os dados");
+    printf("\n 2)Remover Cliente");   // funcionando
+    printf("\n 3)Listar todos os Clientes"); // funcionando
+    printf("\n 4)Buscar Cliente");
+    printf("\n 5)Editar Cliente");
+    printf("\n 6)Adicionar Produto"); // funcionando
+    printf("\n 7)Remover Produto");
+    printf("\n 8)Listar todos os Produtos"); // funcionando
+    printf("\n 9)Buscar Produto");
+    printf("\n 10)Editar Produto");
+    printf("\n 11)Adicionar Compra"); // funcionando
+    printf("\n 12)Remover Compra");   // funcionando
+    printf("\n 13)Listar todas as Compras"); // funcionando
+    printf("\n 14)Buscar Compra");
+    printf("\n 15)Gerar relatorio");
     printf("\n 0)Sair");
 
     printf("\n O que deseja fazer? \n");
@@ -347,7 +352,6 @@ int main()
 
         printf("\n%d NUMERO DE CLIENTES\n\n", numClientes);
         printf("\n%d TAMANHO DO ARQUIVO\n\n", tamanhoArquivo);
-
     }
     fclose(f);
 
@@ -387,70 +391,100 @@ int main()
     {
         opcao = menu();
 
-        switch (opcao)
-        {
-
-        case 1:
-            printf("Quantos cliente serao adicionados: ");
-            scanf("%d", &novosClientes);
-            getchar();
-            cliente = realloc(cliente, (numClientes + novosClientes) * sizeof(Pessoa));
-            if (cliente == NULL)
-            {
-                printf("Erro na alocacao de memoria. \n");
-                return 1;
-            }
-            f = fopen("cliente.dat", "rb+");
-            adicionarCliente(&cliente[numClientes], novosClientes, numClientes, f);
-
-            numClientes += novosClientes; // Mesma coisa que: numClientes = novosClientes + numClientes;
-            // Feito para atualizar o numero max de clientes depois de add.
-            fclose(f);
-            break;
-
-        case 2:
-            printf("Quantos produtos serao adicionados: ");
-            scanf("%d", &novosProdutos);
-            getchar();
-
-            produto = realloc(produto, (numProdutos + novosProdutos) * sizeof(Produto));
-            if (produto == NULL)
-            {
-                printf("Erro na alocacao de memoria. \n");
-                return 1;
-            }
-            f = fopen("produto.dat", "rb+");
-            adicionarProduto(&produto[numProdutos], novosProdutos, numProdutos, f);
-            numProdutos += novosProdutos;
-            fclose(f);
-            break;
-
-        case 3:
-            f = fopen("cliente.dat", "rb+");
-            removerCliente(&cliente, &numClientes, f);
-            fclose(f);
-            break;
-
-        case 4:
-            f = fopen("produto.dat", "rb+");
-            removerProduto(&produto, &numProdutos, f);
-            fclose(f);
-            break;
-
-        case 5:
-            f = fopen("cliente.dat", "rb+");
-            listarClientes(f);
-            fclose(f);
-            break;
-
-        case 6:
-            f = fopen("produto.dat", "rb+");
-            listarProdutos(f);
-            fclose(f);
-            break;
-
-        default:
-            break;
+        switch (opcao) {
+            case 1:
+                printf("Quantos clientes serao adicionados: ");
+                scanf("%d", &novosClientes);
+                getchar();
+                cliente = realloc(cliente, (numClientes + novosClientes) * sizeof(Pessoa));
+                if (cliente == NULL) {
+                    printf("Erro na alocacao de memoria. \n");
+                    return 1;
+                }
+                f = fopen("cliente.dat", "rb+");
+                adicionarCliente(&cliente[numClientes], novosClientes, numClientes, f);
+                numClientes += novosClientes;
+                fclose(f);
+                break;
+        
+            case 2:
+                f = fopen("cliente.dat", "rb+");
+                removerCliente(&cliente, &numClientes, f);
+                fclose(f);
+                break;
+        
+            case 3:
+                f = fopen("cliente.dat", "rb+");
+                listarClientes(f);
+                fclose(f);
+                break;
+        
+            case 4:
+                //implementar
+                break;
+        
+            case 5:
+                //implementar
+                break;
+        
+            case 6:
+                printf("Quantos produtos serao adicionados: ");
+                scanf("%d", &novosProdutos);
+                getchar();
+                produto = realloc(produto, (numProdutos + novosProdutos) * sizeof(Produto));
+                if (produto == NULL) {
+                    printf("Erro na alocacao de memoria. \n");
+                    return 1;
+                }
+                f = fopen("produto.dat", "rb+");
+                adicionarProduto(&produto[numProdutos], novosProdutos, numProdutos, f);
+                numProdutos += novosProdutos;
+                fclose(f);
+                break;
+        
+            case 7:
+                f = fopen("produto.dat", "rb+");
+                removerProduto(&produto, &numProdutos, f);
+                fclose(f);
+                break;
+        
+            case 8:
+                f = fopen("produto.dat", "rb+");
+                listarProdutos(f);
+                fclose(f);
+                break;
+        
+            case 9:
+                //implementar
+                break;
+        
+            case 10:
+                //implementar
+                break;
+        
+            case 11:
+                //implementar
+                break;
+        
+            case 12:
+                //implementar
+                break;
+        
+            case 13:
+                //implementar
+                break;
+        
+            case 14:
+                //implementar
+                break;
+        
+            case 15:
+                //implementar
+                break;
+        
+            default:
+                printf("Opcao invalida!\n");
+                break;
         }
 
     } while (opcao != 0);
