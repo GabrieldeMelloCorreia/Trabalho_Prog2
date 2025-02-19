@@ -23,7 +23,7 @@ typedef struct Compra
     int idCompra;
     Pessoa cliente;
     Produto produtos[10]; // Será uma lista de até 10 produtos
-    int quantidade;
+    int quantidade[10];
 } Compra;
 
 //-------------------------------------- 1 --------------------------------------
@@ -562,7 +562,150 @@ int editarProduto(FILE *arquivo)
 
     return encontrado ? 0 : 1;
 }
+int adicionarCompra(Pessoa *clientes, int numClientes, Produto *produtos, int numProdutos, FILE *arquivoClientes, FILE *arquivoProdutos, FILE *arquivoCompras)
+{
+    int idCliente, idProduto, quantidade, i;
+    int numProdutosCompra = 0;
+    Compra novaCompra;
 
+    // Verificar se há clientes e produtos cadastrados
+    if (numClientes == 0)
+    {
+        printf("Nenhum cliente cadastrado. Cadastre um cliente primeiro.\n");
+        return 1;
+    }
+    if (numProdutos == 0)
+    {
+        printf("Nenhum produto cadastrado. Cadastre produtos primeiro.\n");
+        return 1;
+    }
+
+    // Solicitar o ID do cliente
+    printf("Digite o ID do cliente que esta realizando a compra: ");
+    scanf("%d", &idCliente);
+    getchar();
+
+    // Verificar se o cliente existe
+    int clienteEncontrado = 0;
+    fseek(arquivoClientes, 0, SEEK_SET);
+    while (fread(&novaCompra.cliente, sizeof(Pessoa), 1, arquivoClientes) == 1)
+    {
+        if (novaCompra.cliente.id == idCliente)
+        {
+            clienteEncontrado = 1;
+            break;
+        }
+    }
+
+    if (!clienteEncontrado)
+    {
+        printf("Cliente com ID %d nao encontrado.\n", idCliente);
+        return 1;
+    }
+
+    // Inicializar a compra
+    novaCompra.idCompra = (rand() % 1000) + 1; // Gerar um ID único para a compra
+    for (i = 0; i < 10; i++)
+    {
+        novaCompra.produtos[i].id = -1; // Inicializar os IDs dos produtos como -1 (inválido)
+        novaCompra.quantidade[i] = 0;   // Inicializar as quantidades como 0
+    }
+
+    // Adicionar produtos à compra
+    printf("Adicionar produtos à compra (maximo 10 produtos):\n");
+    while (numProdutosCompra < 10)
+    {
+        printf("Digite o ID do produto %d (ou 0 para finalizar): ", numProdutosCompra + 1);
+        scanf("%d", &idProduto);
+        getchar();
+
+        if (idProduto == 0)
+        {
+            break; // Finalizar a compra
+        }
+
+        // Verificar se o produto existe
+        int produtoEncontrado = 0;
+        fseek(arquivoProdutos, 0, SEEK_SET);
+        while (fread(&novaCompra.produtos[numProdutosCompra], sizeof(Produto), 1, arquivoProdutos) == 1)
+        {
+            if (novaCompra.produtos[numProdutosCompra].id == idProduto)
+            {
+                produtoEncontrado = 1;
+                break;
+            }
+        }
+
+        if (!produtoEncontrado)
+        {
+            printf("Produto com ID %d nao encontrado.\n", idProduto);
+            continue;
+        }
+
+        // Solicitar a quantidade do produto
+        printf("Digite a quantidade do produto %d: ", idProduto);
+        scanf("%d", &quantidade);
+        getchar();
+
+        if (quantidade <= 0)
+        {
+            printf("Quantidade invalida. Digite um valor maior que 0.\n");
+            continue;
+        }
+
+        // Adicionar o produto e a quantidade à compra
+        novaCompra.quantidade[numProdutosCompra] = quantidade;
+        numProdutosCompra++;
+    }
+
+    if (numProdutosCompra == 0)
+    {
+        printf("Nenhum produto adicionado à compra. Compra cancelada.\n");
+        return 1;
+    }
+
+    // Salvar a compra no arquivo
+    fseek(arquivoCompras, 0, SEEK_END);
+    fwrite(&novaCompra, sizeof(Compra), 1, arquivoCompras);
+    fclose(arquivoCompras);
+
+    printf("Compra registrada com sucesso! ID da compra: %d\n", novaCompra.idCompra);
+    return 0;
+}
+void listarCompras(FILE *arquivoCompras)
+{
+    Compra compra;
+    int i;
+
+    fseek(arquivoCompras, 0, SEEK_SET); // Posiciona o ponteiro no início do arquivo
+
+    printf("====== Lista de Compras ======\n");
+
+    // Ler todas as compras do arquivo
+    while (fread(&compra, sizeof(Compra), 1, arquivoCompras) == 1)
+    {
+        printf("\n==== Compra ID: %d ====\n", compra.idCompra);
+        printf("Cliente: %s (ID: %d)\n", compra.cliente.nome, compra.cliente.id);
+        printf("Produtos comprados:\n");
+
+        // Listar os produtos da compra
+        for (i = 0; i < 10; i++)
+        {
+            if (compra.produtos[i].id != -1) // Verifica se o produto foi adicionado
+            {
+                printf("  - Produto: %s (ID: %d)\n", compra.produtos[i].nome, compra.produtos[i].id);
+                printf("    Quantidade: %d\n", compra.quantidade[i]);
+            }
+        }
+        printf("-------------------------\n");
+    }
+
+    // Verificar se não há compras cadastradas
+    if (ftell(arquivoCompras) == 0)
+    {
+        printf("\nNenhuma compra cadastrada.\n");
+    }
+}
 int menu()
 {
     int opcao;
@@ -577,7 +720,7 @@ int menu()
     printf("\n 8)Listar todos os Produtos"); // funcionando
     printf("\n 9)Buscar Produto");           // funcionando
     printf("\n 10)Editar Produto");          // funcionando
-    printf("\n 11)Adicionar Compra");
+    printf("\n 11)Adicionar Compra");        // funcionando
     printf("\n 12)Remover Compra");
     printf("\n 13)Listar todas as Compras");
     printf("\n 14)Buscar Compra");
@@ -596,6 +739,9 @@ int main()
     srand(time(NULL)); // Inicializa a seed do rand() com o tempo atual, para nunca haver repetições.
 
     FILE *f;
+    FILE *fClientes;
+    FILE *fProdutos;
+    FILE *fCompras;
 
     Pessoa *cliente = NULL;
     Produto *produto = NULL;
@@ -622,10 +768,7 @@ int main()
         int tamanhoArquivo = ftell(f); // Obter o tamanho do arquivo em bytes
         rewind(f);                     // Mover o ponteiro de volta para o início do arquivo
 
-        numClientes = tamanhoArquivo / sizeof(Pessoa); // Calcular o número de clientes no arquivo
-
-        // printf("\n%d NUMERO DE CLIENTES\n\n", numClientes);
-        // printf("\n%d TAMANHO DO ARQUIVO\n\n", tamanhoArquivo);
+        numClientes = tamanhoArquivo / sizeof(Pessoa); 
     }
     fclose(f);
 
@@ -642,7 +785,10 @@ int main()
     }
     else
     {
-        numProdutos = (int)(ftell(f) / sizeof(Produto));
+        fseek(f, 0, SEEK_END);         // Mover o ponteiro para o final do arquivo
+        int tamanhoArquivo = ftell(f); // Obter o tamanho do arquivo em bytes
+        rewind(f);                     // Mover o ponteiro de volta para o início do arquivo
+        numProdutos = tamanhoArquivo / sizeof(Produto);
     }
     fclose(f);
 
@@ -748,7 +894,19 @@ int main()
             break;
 
         case 11:
-            // implementar
+            fClientes = fopen("cliente.dat", "rb");
+            fProdutos = fopen("produto.dat", "rb");
+            fCompras = fopen("compra.dat", "ab+"); // Abre o arquivo de compras em modo de adição ao final
+            if (fClientes == NULL || fProdutos == NULL || fCompras == NULL)
+            {
+                printf("Erro ao abrir arquivos.\n");
+                return 1;
+            }
+            adicionarCompra(cliente, numClientes, produto, numProdutos, fClientes, fProdutos, fCompras);
+            fclose(fClientes);
+            fclose(fProdutos);
+            fclose(fCompras);
+            break;
             break;
 
         case 12:
@@ -756,7 +914,14 @@ int main()
             break;
 
         case 13:
-            // implementar
+            fCompras = fopen("compra.dat", "rb");
+            if (fCompras == NULL)
+            {
+                printf("Erro ao abrir o arquivo de compras.\n");
+                return 1;
+            }
+            listarCompras(fCompras);
+            fclose(fCompras);
             break;
 
         case 14:
