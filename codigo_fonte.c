@@ -303,9 +303,9 @@ int menu()
     printf("\n 8)Listar todos os Produtos"); // funcionando
     printf("\n 9)Buscar Produto");
     printf("\n 10)Editar Produto");
-    printf("\n 11)Adicionar Compra"); // funcionando
-    printf("\n 12)Remover Compra");   // funcionando
-    printf("\n 13)Listar todas as Compras"); // funcionando
+    printf("\n 11)Adicionar Compra");
+    printf("\n 12)Remover Compra");  
+    printf("\n 13)Listar todas as Compras");
     printf("\n 14)Buscar Compra");
     printf("\n 15)Gerar relatorio");
     printf("\n 0)Sair");
