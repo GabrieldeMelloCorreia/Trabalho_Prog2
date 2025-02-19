@@ -57,7 +57,162 @@ int adicionarCliente(Pessoa *pessoa, int numClientes, int numClientesExistentes,
 
     return 0;
 }
+int buscarCliente(Pessoa *clientes, int numClientes, FILE *arquivo)
+{
+    int opcao, idBuscar, i;
+    char nomeBuscar[200];
+    int encontrados = 0;
 
+    if (numClientes == 0)
+    {
+        printf("Nenhum cliente cadastrado.\n");
+        return 1;
+    }
+
+    printf("Escolha a forma de busca:\n");
+    printf("1 - Buscar por ID\n");
+    printf("2 - Buscar por nome\n");
+    scanf("%d", &opcao);
+    getchar();
+
+    fseek(arquivo, 0, SEEK_SET);
+    Pessoa *clientesTemp = (Pessoa *)malloc(numClientes * sizeof(Pessoa));
+    if (!clientesTemp)
+    {
+        perror("Erro ao alocar memoria");
+        return 1;
+    }
+
+    fread(clientesTemp, sizeof(Pessoa), numClientes, arquivo);
+
+    if (opcao == 1)
+    {
+        printf("Digite o ID do cliente que deseja buscar: ");
+        scanf("%d", &idBuscar);
+        getchar();
+
+        for (i = 0; i < numClientes; i++)
+        {
+            if (clientesTemp[i].id == idBuscar)
+            {
+                printf("\n====Cliente Encontrado====\n");
+                printf("ID: %d\n", clientesTemp[i].id);
+                printf("Nome: %s\n", clientesTemp[i].nome);
+                printf("Idade: %d\n", clientesTemp[i].idade);
+                printf("-------------------------\n");
+                encontrados++;
+                break;
+            }
+        }
+
+        if (encontrados == 0)
+        {
+            printf("Nenhum cliente com esse ID foi encontrado!\n");
+        }
+    }
+    else if (opcao == 2)
+    {
+        printf("Digite o nome do cliente que deseja buscar: ");
+        fgets(nomeBuscar, 200, stdin);
+        nomeBuscar[strcspn(nomeBuscar, "\n")] = '\0';
+
+        for (i = 0; i < numClientes; i++)
+        {
+            if (strcmp(clientesTemp[i].nome, nomeBuscar) == 0)
+            {
+                printf("\n====Cliente Encontrado====\n");
+                printf("ID: %d\n", clientesTemp[i].id);
+                printf("Nome: %s\n", clientesTemp[i].nome);
+                printf("Idade: %d\n", clientesTemp[i].idade);
+                printf("-------------------------\n");
+                encontrados++;
+            }
+        }
+
+        if (encontrados == 0)
+        {
+            printf("Nenhum cliente com esse nome foi encontrado!\n");
+        }
+    }
+    else
+    {
+        printf("Opcao invalida!\n");
+    }
+
+    free(clientesTemp);
+    return encontrados > 0 ? 0 : 1;
+}
+int editarCliente(Pessoa **clientes, int numClientes, FILE *arquivo)
+{
+    int idBuscar, i;
+    int encontrado = 0;
+
+    if (numClientes == 0)
+    {
+        printf("Nenhum cliente cadastrado.\n");
+        return 1;
+    }
+
+    printf("Digite o ID do cliente que deseja editar: ");
+    scanf("%d", &idBuscar);
+    getchar();
+
+    fseek(arquivo, 0, SEEK_SET);
+    Pessoa *clientesTemp = (Pessoa *)malloc(numClientes * sizeof(Pessoa));
+    if (!clientesTemp)
+    {
+        perror("Erro ao alocar memoria");
+        return 1;
+    }
+
+    fread(clientesTemp, sizeof(Pessoa), numClientes, arquivo);
+
+    for (i = 0; i < numClientes; i++)
+    {
+        if (clientesTemp[i].id == idBuscar)
+        {
+            printf("\n====Cliente Encontrado====\n");
+            printf("ID: %d\n", clientesTemp[i].id);
+            printf("Nome: %s\n", clientesTemp[i].nome);
+            printf("Idade: %d\n", clientesTemp[i].idade);
+            printf("-------------------------\n");
+
+            printf("Digite o novo nome do cliente: ");
+            fgets(clientesTemp[i].nome, 200, stdin);
+            clientesTemp[i].nome[strcspn(clientesTemp[i].nome, "\n")] = '\0';
+
+            printf("Digite a nova idade do cliente: ");
+            scanf("%d", &clientesTemp[i].idade);
+            getchar();
+
+            encontrado = 1;
+            break;
+        }
+    }
+
+    if (encontrado)
+    {
+        // Gravar os clientes atualizados no arquivo
+        fclose(arquivo);
+        arquivo = fopen("cliente.dat", "wb+");
+        if (!arquivo)
+        {
+            perror("Erro ao abrir arquivo para escrita");
+            free(clientesTemp);
+            return 1;
+        }
+
+        fwrite(clientesTemp, sizeof(Pessoa), numClientes, arquivo);
+        printf("Cliente editado com sucesso!\n");
+    }
+    else
+    {
+        printf("Nenhum cliente com esse ID foi encontrado!\n");
+    }
+
+    free(clientesTemp);
+    return encontrado ? 0 : 1;
+}
 //-------------------------------------- 2 --------------------------------------
 int adicionarProduto(Produto *produto, int numProdutos, int numProdutosExistentes, FILE *arquivo)
 {
@@ -247,12 +402,6 @@ int removerProduto(Produto **produto, int *numProduto, FILE *arquivo)
     return removidos > 0 ? 0 : 1;
 }
 
-//-------------------------------------- 5 --------------------------------------
-//   ===   || //
-//  || ||  ||//
-//           || ||  ||\\
-//   ===   || \\
-//funcionando
 void listarClientes(FILE *arquivo)
 {
     Pessoa cliente;
@@ -293,19 +442,19 @@ int menu()
 {
     int opcao;
 
-    printf("\n 1)Adicionar Cliente"); // funcionando
-    printf("\n 2)Remover Cliente");   // funcionando
-    printf("\n 3)Listar todos os Clientes"); // funcionando
-    printf("\n 4)Buscar Cliente");
-    printf("\n 5)Editar Cliente");
-    printf("\n 6)Adicionar Produto"); // funcionando
-    printf("\n 7)Remover Produto");
-    printf("\n 8)Listar todos os Produtos"); // funcionando
+    printf("\n 1)Adicionar Cliente");       // funcionando
+    printf("\n 2)Remover Cliente");         // funcionando
+    printf("\n 3)Listar todos os Clientes");// funcionando
+    printf("\n 4)Buscar Cliente");          // funcionando
+    printf("\n 5)Editar Cliente");          // funcionando
+    printf("\n 6)Adicionar Produto");       // funcionando
+    printf("\n 7)Remover Produto");         
+    printf("\n 8)Listar todos os Produtos");// funcionando
     printf("\n 9)Buscar Produto");
     printf("\n 10)Editar Produto");
-    printf("\n 11)Adicionar Compra");
-    printf("\n 12)Remover Compra");  
-    printf("\n 13)Listar todas as Compras");
+    printf("\n 11)Adicionar Compra");        
+    printf("\n 12)Remover Compra");          
+    printf("\n 13)Listar todas as Compras"); 
     printf("\n 14)Buscar Compra");
     printf("\n 15)Gerar relatorio");
     printf("\n 0)Sair");
@@ -350,8 +499,8 @@ int main()
 
         numClientes = tamanhoArquivo / sizeof(Pessoa); // Calcular o número de clientes no arquivo
 
-        printf("\n%d NUMERO DE CLIENTES\n\n", numClientes);
-        printf("\n%d TAMANHO DO ARQUIVO\n\n", tamanhoArquivo);
+        // printf("\n%d NUMERO DE CLIENTES\n\n", numClientes);
+        // printf("\n%d TAMANHO DO ARQUIVO\n\n", tamanhoArquivo);
     }
     fclose(f);
 
@@ -391,100 +540,107 @@ int main()
     {
         opcao = menu();
 
-        switch (opcao) {
-            case 1:
-                printf("Quantos clientes serao adicionados: ");
-                scanf("%d", &novosClientes);
-                getchar();
-                cliente = realloc(cliente, (numClientes + novosClientes) * sizeof(Pessoa));
-                if (cliente == NULL) {
-                    printf("Erro na alocacao de memoria. \n");
-                    return 1;
-                }
-                f = fopen("cliente.dat", "rb+");
-                adicionarCliente(&cliente[numClientes], novosClientes, numClientes, f);
-                numClientes += novosClientes;
-                fclose(f);
-                break;
-        
-            case 2:
-                f = fopen("cliente.dat", "rb+");
-                removerCliente(&cliente, &numClientes, f);
-                fclose(f);
-                break;
-        
-            case 3:
-                f = fopen("cliente.dat", "rb+");
-                listarClientes(f);
-                fclose(f);
-                break;
-        
-            case 4:
-                //implementar
-                break;
-        
-            case 5:
-                //implementar
-                break;
-        
-            case 6:
-                printf("Quantos produtos serao adicionados: ");
-                scanf("%d", &novosProdutos);
-                getchar();
-                produto = realloc(produto, (numProdutos + novosProdutos) * sizeof(Produto));
-                if (produto == NULL) {
-                    printf("Erro na alocacao de memoria. \n");
-                    return 1;
-                }
-                f = fopen("produto.dat", "rb+");
-                adicionarProduto(&produto[numProdutos], novosProdutos, numProdutos, f);
-                numProdutos += novosProdutos;
-                fclose(f);
-                break;
-        
-            case 7:
-                f = fopen("produto.dat", "rb+");
-                removerProduto(&produto, &numProdutos, f);
-                fclose(f);
-                break;
-        
-            case 8:
-                f = fopen("produto.dat", "rb+");
-                listarProdutos(f);
-                fclose(f);
-                break;
-        
-            case 9:
-                //implementar
-                break;
-        
-            case 10:
-                //implementar
-                break;
-        
-            case 11:
-                //implementar
-                break;
-        
-            case 12:
-                //implementar
-                break;
-        
-            case 13:
-                //implementar
-                break;
-        
-            case 14:
-                //implementar
-                break;
-        
-            case 15:
-                //implementar
-                break;
-        
-            default:
-                printf("Opcao invalida!\n");
-                break;
+        switch (opcao)
+        {
+        case 1:
+            printf("Quantos clientes serao adicionados: ");
+            scanf("%d", &novosClientes);
+            getchar();
+            cliente = realloc(cliente, (numClientes + novosClientes) * sizeof(Pessoa));
+            if (cliente == NULL)
+            {
+                printf("Erro na alocacao de memoria. \n");
+                return 1;
+            }
+            f = fopen("cliente.dat", "rb+");
+            adicionarCliente(&cliente[numClientes], novosClientes, numClientes, f);
+            numClientes += novosClientes;
+            fclose(f);
+            break;
+
+        case 2:
+            f = fopen("cliente.dat", "rb+");
+            removerCliente(&cliente, &numClientes, f);
+            fclose(f);
+            break;
+
+        case 3:
+            f = fopen("cliente.dat", "rb+");
+            listarClientes(f);
+            fclose(f);
+            break;
+
+        case 4:
+            f = fopen("cliente.dat", "rb");
+            buscarCliente(cliente, numClientes, f);
+            fclose(f);
+            break;
+
+        case 5:
+            f = fopen("cliente.dat", "rb+");
+            editarCliente(&cliente, numClientes, f);
+            fclose(f);
+            break;
+
+        case 6:
+            printf("Quantos produtos serao adicionados: ");
+            scanf("%d", &novosProdutos);
+            getchar();
+            produto = realloc(produto, (numProdutos + novosProdutos) * sizeof(Produto));
+            if (produto == NULL)
+            {
+                printf("Erro na alocacao de memoria. \n");
+                return 1;
+            }
+            f = fopen("produto.dat", "rb+");
+            adicionarProduto(&produto[numProdutos], novosProdutos, numProdutos, f);
+            numProdutos += novosProdutos;
+            fclose(f);
+            break;
+
+        case 7:
+            f = fopen("produto.dat", "rb+");
+            removerProduto(&produto, &numProdutos, f);
+            fclose(f);
+            break;
+
+        case 8:
+            f = fopen("produto.dat", "rb+");
+            listarProdutos(f);
+            fclose(f);
+            break;
+
+        case 9:
+            // implementar
+            break;
+
+        case 10:
+            // implementar
+            break;
+
+        case 11:
+            // implementar
+            break;
+
+        case 12:
+            // implementar
+            break;
+
+        case 13:
+            // implementar
+            break;
+
+        case 14:
+            // implementar
+            break;
+
+        case 15:
+            // implementar
+            break;
+
+        default:
+            printf("Opcao invalida!\n");
+            break;
         }
 
     } while (opcao != 0);
