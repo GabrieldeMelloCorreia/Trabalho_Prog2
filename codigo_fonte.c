@@ -90,174 +90,141 @@ int adicionarProduto(Produto *produto, int numProdutos, int numProdutosExistente
 }
 
 //-------------------------------------- 3 --------------------------------------
-//-------------------------------procura por nome--------------------------------
-// int removerCliente(Pessoa **pessoa, int *numClientes, FILE *arquivo) {
-//     int i, j;
-//     int removidos = 0;
-//     char nomeBuscar[200];
-
-//     if (*numClientes == 0) {
-//         printf("Nenhum cliente cadastrado.\n");
-//         return 1;
-//     }
-
-//     printf("Qual o nome do cliente para remocao: ");
-//     fgets(nomeBuscar, 200, stdin);
-//     nomeBuscar[strcspn(nomeBuscar, "\n")] = '\0'; // Remover o '\n' capturado pelo fgets()
-
-//     for (i = 0; i < *numClientes; i++) {
-//         if (strcmp((*pessoa)[i].nome, nomeBuscar) == 0) {
-//             // Remover o cliente encontrado, substituindo os dados da posição à frente nele
-//             for (j = i; j < *numClientes - 1; j++) {
-//                 (*pessoa)[j] = (*pessoa)[j + 1];
-//             }
-
-//             (*numClientes)--; // Atualiza o número de clientes
-//             i--; // Para verificar a mesma posição, já que os dados foram substituídos pelo da frente
-//             removidos++; // Contador de remoção
-//         }
-//     }
-
-//     if (removidos > 0) {
-//         if (*numClientes > 0) {
-//             *pessoa = realloc(*pessoa, (*numClientes) * sizeof(Pessoa)); // Realocar vetor de structs
-//             if (*pessoa == NULL) {
-//                 printf("Erro ao realocar memoria.\n");
-//                 return 1;
-//             }
-//         } else {
-//             free(*pessoa);
-//             *pessoa = NULL;
-//         }
-
-//         fseek(arquivo, 0, SEEK_SET); // Movendo para o início do arquivo
-//         fwrite(*pessoa, sizeof(Pessoa), *numClientes, arquivo); // Atualizando o arquivo
-//         fclose(arquivo);
-
-//         printf("%d clientes removidos!\n", removidos);
-//     } else {
-//         printf("\n============================================\n");
-//         printf("Nenhum cliente com esse nome foi encontrado!\n");
-//         printf("============================================\n");
-//         return 1;
-//     }
-//     return 0;
-// }
-//----------------------------------------------------------------------------------------------------------------------------------------
-//-------------------------------------------------PROCURA POR ID-------------------------------------------------------------------------
-int removerCliente(Pessoa **pessoa, int *numClientes, FILE *arquivo) {
-    int i, j;
+int removerCliente(Pessoa **clientes, int *numClientes, FILE *arquivo) {
+    int idBuscar, i, j;
     int removidos = 0;
-    int idBuscar;
 
     if (*numClientes == 0) {
         printf("Nenhum cliente cadastrado.\n");
+        return 0;
+    }
+
+    printf("Digite o ID do cliente que deseja remover: ");
+    scanf("%d", &idBuscar);
+    getchar();
+
+    // Ler todos os clientes do arquivo
+    fseek(arquivo, 0, SEEK_SET);
+    Pessoa *clientesTemp = (Pessoa *)malloc((*numClientes) * sizeof(Pessoa));
+    if (!clientesTemp) {
+        perror("Erro ao alocar memoria");
         return 1;
     }
 
-    printf("Qual o ID do cliente para remocao: ");
-    scanf("%d", &idBuscar);
-    getchar(); // Limpar o buffer
+    fread(clientesTemp, sizeof(Pessoa), *numClientes, arquivo);
 
-    for (i = 0; i < *numClientes; i++) {
-        if ((*pessoa)[i].id == idBuscar) {
-            // Remover o cliente encontrado, substituindo os dados da posição à frente nele
-            for (j = i; j < *numClientes - 1; j++) {
-                (*pessoa)[j] = (*pessoa)[j + 1];
-            }
-
-            (*numClientes)--; // Atualiza o número de clientes
-            i--; // Para verificar a mesma posição, já que os dados foram substituídos pelo da frente
-            removidos++; // Contador de remoção
+    // Encontrar e remover o cliente com o ID especificado
+    for (i = 0, j = 0; i < *numClientes; i++) {
+        if (clientesTemp[i].id != idBuscar) {
+            clientesTemp[j++] = clientesTemp[i];
+        } else {
+            removidos++;
         }
     }
 
     if (removidos > 0) {
+        *numClientes -= removidos;
+        Pessoa *clientesRealloc = realloc(*clientes, (*numClientes) * sizeof(Pessoa));
+        if (*numClientes > 0 && clientesRealloc == NULL) {
+            perror("Erro ao realocar memoria");
+            free(clientesTemp);
+            return 1;
+        }
+        *clientes = clientesRealloc;
+
         if (*numClientes > 0) {
-            *pessoa = realloc(*pessoa, (*numClientes) * sizeof(Pessoa)); // Realocar vetor de structs
-            if (*pessoa == NULL) {
-                printf("Erro ao realocar memoria.\n");
-                return 1;
-            }
-        } else {
-            free(*pessoa);
-            *pessoa = NULL;
+            memcpy(*clientes, clientesTemp, (*numClientes) * sizeof(Pessoa));
         }
 
-        fseek(arquivo, 0, SEEK_SET); // Movendo para o início do arquivo
-        fwrite(*pessoa, sizeof(Pessoa), *numClientes, arquivo); // Atualizando o arquivo
+        // Gravar os clientes atualizados no arquivo
         fclose(arquivo);
+        arquivo = fopen("cliente.dat", "wb+");
+        if (!arquivo) {
+            perror("Erro ao abrir arquivo para escrita");
+            free(clientesTemp);
+            return 1;
+        }
 
-        printf("%d clientes removidos!\n", removidos);
+        fwrite(*clientes, sizeof(Pessoa), *numClientes, arquivo);
+        printf("%d cliente(s) removido(s)!\n", removidos);
     } else {
-        printf("\n============================================\n");
         printf("Nenhum cliente com esse ID foi encontrado!\n");
-        printf("============================================\n");
-        return 1;
     }
-    return 0;
+
+    free(clientesTemp);
+    return removidos > 0 ? 0 : 1;
 }
 
 
 
 //-------------------------------------- 4 --------------------------------------
-int removerProduto(Produto **produto, int *numProduto, FILE *arquivo) {
+int removerProduto(Produto **produto, int *numProduto)
+{
     int i, j;
     int removidos = 0;
-    int idBuscar;
+    char produtoBuscar[200];
 
-    if (*numProduto == 0) {
-        printf("Nenhum produto cadastrado.\n");
-        return 1;
+    if (*numProduto == 0)
+    {
+        printf("Nenhum produto cadastrado. \n");
+        return 0;
     }
 
-    printf("Qual o ID do produto para remocao: ");
-    scanf("%d", &idBuscar);
-    getchar(); // Limpar o buffer
+    printf("Qual o nome do produto para remocao: ");
+    fgets(produtoBuscar, 200, stdin);
 
-    for (i = 0; i < *numProduto; i++) {
-        if ((*produto)[i].id == idBuscar) {
-            // Remover o produto encontrado, substituindo os dados da posição à frente nele
-            for (j = i; j < *numProduto - 1; j++) {
+    // Remover o '\n' que pode ser capturado pelo fgets()
+    produtoBuscar[strcspn(produtoBuscar, "\n")] = 0;
+
+    /*"strcmp " compara duas strings, caso sejam iguais retorna 0,
+    caso a primeira seja menor que a segundo retorna um numero negativo, e caso a primeira for maior que a segundo
+    retorna um numero positivo*/
+    for (i = 0; i < *numProduto; i++)
+    {
+        if (strcmp((*produto)[i].nome, produtoBuscar) == 0)
+        {
+            //"Removerá o produto encontrado, substituindo os dados da posição a frente nele"
+            for (j = i; j < *numProduto - 1; j++)
+            {
                 (*produto)[j] = (*produto)[j + 1];
             }
 
-            (*numProduto)--; // Atualiza o número de produtos
-            i--; // Para verificar a mesma posição, já que os dados foram substituídos pelo da frente
-            removidos++; // Contador de remoção
+            (*numProduto)--; // atualiza o n° de clientes
+            i--;             // para verificar a mesma posição, ja que os dados foram substituídos pelo da frente
+            removidos++;     // contador de remoção
         }
     }
 
-    if (removidos > 0) {
-        if (*numProduto > 0) {
-            *produto = realloc(*produto, (*numProduto) * sizeof(Produto)); // Realocar vetor de structs
-            if (*produto == NULL) {
-                printf("Erro ao realocar memoria.\n");
-                return 1;
-            }
-        } else {
+    if (removidos > 0)
+    { // caso há remocao realocamos o vetor de struct
+
+        if (*numProduto > 0)
+        { // E também caso o numero de clientes for maior que 0, se não o vetor de struct poderá estar vazio e com vazamento de memória
+            *produto = realloc(*produto, (*numProduto) * sizeof(Produto));
+        }
+        else
+        {
             free(*produto);
             *produto = NULL;
         }
-
-        fclose(arquivo);
-        arquivo = fopen("produto.dat", "wb+");
-        fseek(arquivo, 0, SEEK_SET); // Movendo para o início do arquivo
-        fwrite(*produto, sizeof(Produto), *numProduto, arquivo); // Atualizando o arquivo
-        fclose(arquivo);
-
-        printf("\n%d Produtos removidos!\n", removidos);
-    } else {
-        printf("\n============================================\n");
-        printf("Nenhum produto com esse ID foi encontrado!\n");
-        printf("============================================\n");
+        printf("\n%d Produtos removidos! \n", removidos);
+    }
+    else
+    {
+        printf("\n============================================ \n");
+        printf("Nenhum produto com esse nome foi encontrado! \n");
+        printf("============================================ \n");
         return 1;
     }
     return 0;
 }
 
-
 //-------------------------------------- 5 --------------------------------------
+//   ===   || //
+//  || ||  ||//
+//        || ||  ||\\
+//   ===   || \\
+//funcionando
 void listarClientes(FILE *arquivo)
 {
     Pessoa cliente;
@@ -298,12 +265,12 @@ int menu()
 {
     int opcao;
 
-    printf("\n 1)Adicionar Cliente");//funcionando
-    printf("\n 2)Adicionar Produto");//funcionando
+    printf("\n 1)Adicionar Cliente"); // funcionando
+    printf("\n 2)Adicionar Produto"); // funcionando
     printf("\n 3)Remover Cliente");
     printf("\n 4)Remover Produto");
-    printf("\n 5)Listar todos os Clientes");//funcionando
-    printf("\n 6)Listar todos os Produtos");//funcionando
+    printf("\n 5)Listar todos os Clientes"); // funcionando
+    printf("\n 6)Listar todos os Produtos"); // funcionando
     printf("\n 7)Buscar Cliente");
     printf("\n 8)Buscar Produto");
     printf("\n 9)Buscar Compra");
@@ -328,6 +295,7 @@ int main()
     int numClientes = 0;
     int numProdutos = 0;
     int opcao, novosClientes, novosProdutos;
+
     // verifica se existe o arquivo de cliente e cria se não existir
     f = fopen("cliente.dat", "rb+"); // Criação do arquivo em Binário
     if (f == NULL)
@@ -342,6 +310,7 @@ int main()
         fclose(f);
     }
     fclose(f);
+
     // verifica se existe o arquivo de produtos e cria se não existir
     f = fopen("produto.dat", "rb+"); // Criação do arquivo em Binário
     if (f == NULL)
@@ -351,11 +320,10 @@ int main()
         { // Aqui podemos continuar tendo falha na criação por causa de PERMISSÃO, ou falta de espaço no disco Local.
             exit(0);
         }
-        // ALT + Z = ele faz o ajuste do conteúdo ao tamanho da tela.
-        // CTRL + ; = Deixa a linha inteira como comentário, e também o comentário
         fclose(f);
     }
     fclose(f);
+
     // verifica se existe o arquivo de compra e cria se não existir
     f = fopen("compra.dat", "rb+"); // Criação do arquivo em Binário
     if (f == NULL)
@@ -365,8 +333,6 @@ int main()
         { // Aqui podemos continuar tendo falha na criação por causa de PERMISSÃO, ou falta de espaço no disco Local.
             exit(0);
         }
-        // ALT + Z = ele faz o ajuste do conteúdo ao tamanho da tela.
-        // CTRL + ; = Deixa a linha inteira como comentário, e também o comentário
         fclose(f);
     }
     fclose(f);
@@ -390,8 +356,9 @@ int main()
                 printf("Erro na alocacao de memoria. \n");
                 return 1;
             }
-            f = fopen("cliente.dat", "wb+");
+            f = fopen("cliente.dat", "rb+");
             adicionarCliente(&cliente[numClientes], novosClientes, numClientes, f);
+            
             numClientes += novosClientes; // Mesma coisa que: numClientes = novosClientes + numClientes;
             // Feito para atualizar o numero max de clientes depois de add.
             fclose(f);
@@ -409,28 +376,31 @@ int main()
                 return 1;
             }
             f = fopen("produto.dat", "rb+");
-            adicionarProduto(&produto[numProdutos], novosProdutos, numProdutos,f);
+            adicionarProduto(&produto[numProdutos], novosProdutos, numProdutos, f);
             numProdutos += novosProdutos;
+            fclose(f);
             break;
 
         case 3:
             f = fopen("cliente.dat", "rb+");
-            removerCliente(&cliente, &numClientes,f);
+            removerCliente(&cliente, &numClientes, f);
+            fclose(f);
             break;
 
         case 4:
-            f = fopen("produto.dat", "rb+");
-            removerProduto(&produto, &numProdutos,f);
+            removerProduto(&produto, &numProdutos);
             break;
 
         case 5:
             f = fopen("cliente.dat", "rb+");
             listarClientes(f);
+            fclose(f);
             break;
 
         case 6:
             f = fopen("produto.dat", "rb+");
             listarProdutos(f);
+            fclose(f);
             break;
 
         default:
