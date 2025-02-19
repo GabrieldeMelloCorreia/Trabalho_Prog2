@@ -438,23 +438,148 @@ void listarProdutos(FILE *arquivo)
     }
 }
 
+int buscarProduto(FILE *arquivo)
+{
+    int opcao, idBuscar;
+    char nomeBuscar[200];
+    int encontrados = 0;
+    Produto produto;
+
+    printf("Escolha a forma de busca:\n");
+    printf("1 - Buscar por ID\n");
+    printf("2 - Buscar por nome\n");
+    scanf("%d", &opcao);
+    getchar();
+
+    fseek(arquivo, 0, SEEK_SET);
+
+    if (opcao == 1)
+    {
+        printf("Digite o ID do produto que deseja buscar: ");
+        scanf("%d", &idBuscar);
+        getchar();
+
+        while (fread(&produto, sizeof(Produto), 1, arquivo) == 1)
+        {
+            if (produto.id == idBuscar)
+            {
+                printf("\n====Produto Encontrado====\n");
+                printf("ID: %d\n", produto.id);
+                printf("Nome: %s\n", produto.nome);
+                printf("Preco: %.2f\n", produto.preco);
+                printf("-------------------------\n");
+                encontrados++;
+                break;
+            }
+        }
+
+        if (encontrados == 0)
+        {
+            printf("Nenhum produto com esse ID foi encontrado!\n");
+        }
+    }
+    else if (opcao == 2)
+    {
+        printf("Digite o nome do produto que deseja buscar: ");
+        fgets(nomeBuscar, 200, stdin);
+        nomeBuscar[strcspn(nomeBuscar, "\n")] = '\0';
+
+        while (fread(&produto, sizeof(Produto), 1, arquivo) == 1)
+        {
+            if (strcmp(produto.nome, nomeBuscar) == 0)
+            {
+                printf("\n====Produto Encontrado====\n");
+                printf("ID: %d\n", produto.id);
+                printf("Nome: %s\n", produto.nome);
+                printf("Preco: %.2f\n", produto.preco);
+                printf("-------------------------\n");
+                encontrados++;
+            }
+        }
+
+        if (encontrados == 0)
+        {
+            printf("Nenhum produto com esse nome foi encontrado!\n");
+        }
+    }
+    else
+    {
+        printf("Opcao invalida!\n");
+    }
+
+    return encontrados > 0 ? 0 : 1;
+}
+
+int editarProduto(FILE *arquivo)
+{
+    int idBuscar;
+    int encontrado = 0;
+    Produto produto;
+    long int posicao;
+
+    printf("Digite o ID do produto que deseja editar: ");
+    scanf("%d", &idBuscar);
+    getchar();
+
+    fseek(arquivo, 0, SEEK_SET);
+
+    while (fread(&produto, sizeof(Produto), 1, arquivo) == 1)
+    {
+        if (produto.id == idBuscar)
+        {
+            printf("\n====Produto Encontrado====\n");
+            printf("ID: %d\n", produto.id);
+            printf("Nome: %s\n", produto.nome);
+            printf("Preco: %.2f\n", produto.preco);
+            printf("-------------------------\n");
+
+            printf("Digite o novo nome do produto: ");
+            fgets(produto.nome, 200, stdin);
+            produto.nome[strcspn(produto.nome, "\n")] = '\0';
+
+            printf("Digite o novo preco do produto: ");
+            scanf("%f", &produto.preco);
+            getchar();
+
+            // Voltar para a posição correta no arquivo para sobrescrever o produto
+            posicao = ftell(arquivo) - sizeof(Produto);
+            fseek(arquivo, posicao, SEEK_SET);
+            fwrite(&produto, sizeof(Produto), 1, arquivo);
+
+            encontrado = 1;
+            break;
+        }
+    }
+
+    if (encontrado)
+    {
+        printf("Produto editado com sucesso!\n");
+    }
+    else
+    {
+        printf("Nenhum produto com esse ID foi encontrado!\n");
+    }
+
+    return encontrado ? 0 : 1;
+}
+
 int menu()
 {
     int opcao;
 
-    printf("\n 1)Adicionar Cliente");       // funcionando
-    printf("\n 2)Remover Cliente");         // funcionando
-    printf("\n 3)Listar todos os Clientes");// funcionando
-    printf("\n 4)Buscar Cliente");          // funcionando
-    printf("\n 5)Editar Cliente");          // funcionando
-    printf("\n 6)Adicionar Produto");       // funcionando
-    printf("\n 7)Remover Produto");         
-    printf("\n 8)Listar todos os Produtos");// funcionando
-    printf("\n 9)Buscar Produto");
-    printf("\n 10)Editar Produto");
-    printf("\n 11)Adicionar Compra");        
-    printf("\n 12)Remover Compra");          
-    printf("\n 13)Listar todas as Compras"); 
+    printf("\n 1)Adicionar Cliente");        // funcionando
+    printf("\n 2)Remover Cliente");          // funcionando
+    printf("\n 3)Listar todos os Clientes"); // funcionando
+    printf("\n 4)Buscar Cliente");           // funcionando
+    printf("\n 5)Editar Cliente");           // funcionando
+    printf("\n 6)Adicionar Produto");        // funcionando
+    printf("\n 7)Remover Produto");          // funcionando
+    printf("\n 8)Listar todos os Produtos"); // funcionando
+    printf("\n 9)Buscar Produto");           // funcionando
+    printf("\n 10)Editar Produto");          // funcionando
+    printf("\n 11)Adicionar Compra");
+    printf("\n 12)Remover Compra");
+    printf("\n 13)Listar todas as Compras");
     printf("\n 14)Buscar Compra");
     printf("\n 15)Gerar relatorio");
     printf("\n 0)Sair");
@@ -611,11 +736,15 @@ int main()
             break;
 
         case 9:
-            // implementar
+            f = fopen("produto.dat", "rb");
+            buscarProduto(f);
+            fclose(f);
             break;
 
         case 10:
-            // implementar
+            f = fopen("produto.dat", "rb+");
+            editarProduto(f);
+            fclose(f);
             break;
 
         case 11:
