@@ -676,6 +676,7 @@ void listarCompras(FILE *arquivoCompras)
 {
     Compra compra;
     int i;
+    float totalCompra;
 
     fseek(arquivoCompras, 0, SEEK_SET); // Posiciona o ponteiro no início do arquivo
 
@@ -684,6 +685,7 @@ void listarCompras(FILE *arquivoCompras)
     // Ler todas as compras do arquivo
     while (fread(&compra, sizeof(Compra), 1, arquivoCompras) == 1)
     {
+        totalCompra = 0; // Inicializa o total da compra
         printf("\n==== Compra ID: %d ====\n", compra.idCompra);
         printf("Cliente: %s (ID: %d)\n", compra.cliente.nome, compra.cliente.id);
         printf("Produtos comprados:\n");
@@ -693,10 +695,18 @@ void listarCompras(FILE *arquivoCompras)
         {
             if (compra.produtos[i].id != -1) // Verifica se o produto foi adicionado
             {
+                // Exibe o produto, quantidade e preço
                 printf("  - Produto: %s (ID: %d)\n", compra.produtos[i].nome, compra.produtos[i].id);
                 printf("    Quantidade: %d\n", compra.quantidade[i]);
+                printf("    Preco: %.2f\n", compra.produtos[i].preco);
+
+                // Calcula o subtotal do produto e adiciona ao total da compra
+                totalCompra += compra.produtos[i].preco * compra.quantidade[i];
             }
         }
+
+        // Exibe o total da compra
+        printf("TOTAL: %.2f\n", totalCompra);
         printf("-------------------------\n");
     }
 
