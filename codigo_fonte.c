@@ -672,6 +672,74 @@ int adicionarCompra(Pessoa *clientes, int numClientes, Produto *produtos, int nu
     printf("Compra registrada com sucesso! ID da compra: %d\n", novaCompra.idCompra);
     return 0;
 }
+int removerCompra(FILE *arquivoCompras)
+{
+    int idBuscar, encontrada = 0;
+    Compra compra;
+    long int posicao;
+
+    // Verificar se o arquivo está vazio
+    fseek(arquivoCompras, 0, SEEK_END);
+    if (ftell(arquivoCompras) == 0)
+    {
+        printf("Nenhuma compra cadastrada.\n");
+        return 1;
+    }
+    fseek(arquivoCompras, 0, SEEK_SET);
+
+    // Solicitar o ID da compra a ser removida
+    printf("Digite o ID da compra que deseja remover: ");
+    scanf("%d", &idBuscar);
+    getchar();
+
+    // Criar um arquivo temporário para armazenar as compras que não serão removidas
+    FILE *arquivoTemp = fopen("temp.dat", "wb");
+    if (!arquivoTemp)
+    {
+        perror("Erro ao criar arquivo temporario");
+        return 1;
+    }
+
+    // Ler todas as compras do arquivo original
+    fseek(arquivoCompras, 0, SEEK_SET);
+    while (fread(&compra, sizeof(Compra), 1, arquivoCompras) == 1)
+    {
+        if (compra.idCompra == idBuscar)
+        {
+            encontrada = 1; // Compra encontrada
+            printf("Compra ID %d removida com sucesso!\n", idBuscar);
+        }
+        else
+        {
+            // Escrever a compra no arquivo temporário (exceto a compra removida)
+            fwrite(&compra, sizeof(Compra), 1, arquivoTemp);
+        }
+    }
+
+    fclose(arquivoCompras);
+    fclose(arquivoTemp);
+
+    if (!encontrada)
+    {
+        printf("Nenhuma compra com ID %d foi encontrada.\n", idBuscar);
+        remove("temp.dat"); // Remove o arquivo temporário, pois não houve alterações
+        return 1;
+    }
+
+    // Substituir o arquivo original pelo temporário
+    remove("compra.dat");
+    rename("temp.dat", "compra.dat");
+
+    // Reabrir o arquivo original para uso posterior
+    arquivoCompras = fopen("compra.dat", "rb+");
+    if (!arquivoCompras)
+    {
+        perror("Erro ao reabrir o arquivo de compras");
+        return 1;
+    }
+
+    return 0;
+}
 void listarCompras(FILE *arquivoCompras)
 {
     Compra compra;
@@ -716,6 +784,72 @@ void listarCompras(FILE *arquivoCompras)
         printf("\nNenhuma compra cadastrada.\n");
     }
 }
+void buscarCompra(FILE *arquivoCompras)
+{
+    int idBuscar, encontrada = 0;
+    Compra compra;
+    float totalCompra = 0;
+
+    // Verificar se o arquivo está vazio
+    fseek(arquivoCompras, 0, SEEK_END);
+    if (ftell(arquivoCompras) == 0)
+    {
+        printf("Nenhuma compra cadastrada.\n");
+        return;
+    }
+    fseek(arquivoCompras, 0, SEEK_SET);
+
+    // Solicitar o ID da compra a ser buscada
+    printf("Digite o ID da compra que deseja buscar: ");
+    scanf("%d", &idBuscar);
+    getchar();
+
+    // Ler todas as compras do arquivo
+    while (fread(&compra, sizeof(Compra), 1, arquivoCompras) == 1)
+    {
+        if (compra.idCompra == idBuscar)
+        {
+            encontrada = 1;  // Compra encontrada
+            totalCompra = 0; // Inicializa o total da compra
+
+            // Remove caracteres especiais do nome do cliente
+            removerCaracteresEspeciais(compra.cliente.nome);
+
+            // Exibe as informações da compra
+            printf("\n==== Compra ID: %d ====\n", compra.idCompra);
+            printf("Cliente: %s (ID: %d)\n", compra.cliente.nome, compra.cliente.id);
+            printf("Produtos comprados:\n");
+
+            // Listar os produtos da compra
+            for (int i = 0; i < 10; i++)
+            {
+                if (compra.produtos[i].id != -1) // Verifica se o produto foi adicionado
+                {
+                    // Remove caracteres especiais do nome do produto
+                    removerCaracteresEspeciais(compra.produtos[i].nome);
+
+                    // Exibe o produto, quantidade e preço
+                    printf("  - Produto: %s (ID: %d)\n", compra.produtos[i].nome, compra.produtos[i].id);
+                    printf("    Quantidade: %d\n", compra.quantidade[i]);
+                    printf("    Preco: %.2f\n", compra.produtos[i].preco);
+
+                    // Calcula o subtotal do produto e adiciona ao total da compra
+                    totalCompra += compra.produtos[i].preco * compra.quantidade[i];
+                }
+            }
+
+            // Exibe o total da compra
+            printf("TOTAL: %.2f\n", totalCompra);
+            printf("-------------------------\n");
+            break; // Encerra a busca após encontrar a compra
+        }
+    }
+
+    if (!encontrada)
+    {
+        printf("Nenhuma compra com ID %d foi encontrada.\n", idBuscar);
+    }
+}
 int menu()
 {
     int opcao;
@@ -731,10 +865,11 @@ int menu()
     printf("\n 9)Buscar Produto");           // funcionando
     printf("\n 10)Editar Produto");          // funcionando
     printf("\n 11)Adicionar Compra");        // funcionando
-    printf("\n 12)Remover Compra");
-    printf("\n 13)Listar todas as Compras");
-    printf("\n 14)Buscar Compra");
-    printf("\n 15)Gerar relatorio");
+    printf("\n 12)Remover Compra");          // funcionando
+    printf("\n 13)Listar todas as Compras"); // funcionando
+    printf("\n 14)Buscar Compra");           // funcionando
+    printf("\n 15)Editar Compra");           
+    printf("\n 16)Gerar relatorio");         
     printf("\n 0)Sair");
 
     printf("\n O que deseja fazer? \n");
@@ -778,7 +913,7 @@ int main()
         int tamanhoArquivo = ftell(f); // Obter o tamanho do arquivo em bytes
         rewind(f);                     // Mover o ponteiro de volta para o início do arquivo
 
-        numClientes = tamanhoArquivo / sizeof(Pessoa); 
+        numClientes = tamanhoArquivo / sizeof(Pessoa);
     }
     fclose(f);
 
@@ -920,7 +1055,14 @@ int main()
             break;
 
         case 12:
-            // implementar
+            fCompras = fopen("compra.dat", "rb+");
+            if (fCompras == NULL)
+            {
+                printf("Erro ao abrir o arquivo de compras.\n");
+                return 1;
+            }
+            removerCompra(fCompras);
+            fclose(fCompras);
             break;
 
         case 13:
@@ -935,7 +1077,14 @@ int main()
             break;
 
         case 14:
-            // implementar
+            fCompras = fopen("compra.dat", "rb");
+            if (fCompras == NULL)
+            {
+                printf("Erro ao abrir o arquivo de compras.\n");
+                return 1;
+            }
+            buscarCompra(fCompras);
+            fclose(fCompras);
             break;
 
         case 15:
